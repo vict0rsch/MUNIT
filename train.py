@@ -59,6 +59,11 @@ if unknownargs:
             k, v = u.split("=")
             k = k.strip().replace("-", "")
             v = v.strip()
+            if v.replace(".", "").isdigit():
+                if "." in v:
+                    v = float(v)
+                else:
+                    v = int(v)
             if k in config:
                 print("Overwriting {:20} {:30} -> {:}".format(k, config[k], v))
                 config[k] = v
@@ -80,6 +85,8 @@ comet_exp.log_asset(opts.config)
 max_iter = config["max_iter"]
 display_size = config["display_size"]
 config["vgg_model_path"] = opts.output_path
+
+comet_exp.log_parameters(config)
 
 # Setup model and data loader
 if opts.trainer == "MUNIT":
