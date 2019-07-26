@@ -5,15 +5,9 @@ import sys
 sh_file = "train_process.sh"
 prefix = f"sbatch {sh_file} python train.py"
 
-params = [
-    {"disen_ab": 0},
-    {"disen_ab": 5},
-    {"disen_ab": 10},
-    {"disen_ab": 50},
-    {"disen_ab": 100},
-]
+params = [{"disen_ab": 0}, {"disen_ab": 5}]
 
-output_path = Path("/network/tmp1/schmidtv/munit/disen_v0")
+output_path = Path("/network/tmp1/schmidtv/munit/disen_v1_shift_single")
 
 print("Launching processes with outputs in", str(output_path))
 print("Did you update slurm-output location in", sh_file, "?")
@@ -34,4 +28,3 @@ for i, param in enumerate(params):
         f.write(cmd)
     print("Running ", cmd)
     subprocess.check_output(cmd, shell=True)
-    

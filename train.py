@@ -15,7 +15,7 @@ from utils import (
 )
 import argparse
 from torch.autograd import Variable
-from trainer import MUNIT_Trainer, UNIT_Trainer
+from trainer import MUNIT_Trainer, UNIT_Trainer, DoubleMUNIT_Trainer
 import torch.backends.cudnn as cudnn
 import torch
 
@@ -93,8 +93,10 @@ if opts.trainer == "MUNIT":
     trainer = MUNIT_Trainer(config, comet_exp)
 elif opts.trainer == "UNIT":
     trainer = UNIT_Trainer(config)
+elif opts.trainer == "DoubleMUNIT":
+    trainer = DoubleMUNIT_Trainer(config, comet_exp)
 else:
-    sys.exit("Only support MUNIT|UNIT")
+    sys.exit("Only support MUNIT|UNIT|DOubleMUNIT")
 trainer.cuda()
 train_loader_a, train_loader_b, test_loader_a, test_loader_b = get_all_data_loaders(
     config
