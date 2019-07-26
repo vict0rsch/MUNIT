@@ -80,7 +80,7 @@ class MUNIT_Trainer(nn.Module):
         return torch.mean(torch.abs(input - target))
 
     def disantanglement_criterion(self, s_a_prime, s_b_prime):
-        return torch.norm(s_a_prime.mean(0) - s_b_prime.mean(0))
+        return torch.sigmoid(torch.norm(s_a_prime.mean(0) - s_b_prime.mean(0)))
 
     def forward(self, x_a, x_b):
         self.eval()
