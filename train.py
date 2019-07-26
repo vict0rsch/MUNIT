@@ -38,7 +38,9 @@ parser.add_argument(
 )
 parser.add_argument("--output_path", type=str, default=".", help="outputs path")
 parser.add_argument("--resume", action="store_true")
-parser.add_argument("--trainer", type=str, default="MUNIT", help="MUNIT|UNIT")
+parser.add_argument(
+    "--trainer", type=str, default="MUNIT", help="MUNIT|UNIT|DoubleMUNIT"
+)
 parser.add_argument("--seed", type=int, default=None, help="Torch and numpy seeds")
 opts, unknownargs = parser.parse_known_args()
 
@@ -88,6 +90,7 @@ config["vgg_model_path"] = opts.output_path
 
 comet_exp.log_parameters(config)
 
+print("Using model", opts.trainer)
 # Setup model and data loader
 if opts.trainer == "MUNIT":
     trainer = MUNIT_Trainer(config, comet_exp)
