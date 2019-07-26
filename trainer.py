@@ -21,6 +21,10 @@ class MUNIT_Trainer(nn.Module):
         super(MUNIT_Trainer, self).__init__()
 
         self.comet_exp = comet_exp
+        self.randn_shift = (
+            hyperparameters["randn_shift"] if "randn_shift" in hyperparameters else 2
+        )
+        print("self.randn_shift", self.randn_shift)
 
         lr = hyperparameters["lr"]
         # Initiate the networks
@@ -41,8 +45,12 @@ class MUNIT_Trainer(nn.Module):
 
         # fix the noise used in sampling
         display_size = int(hyperparameters["display_size"])
-        self.s_a = torch.randn(display_size, self.style_dim, 1, 1).cuda()
-        self.s_b = torch.randn(display_size, self.style_dim, 1, 1).cuda()
+        self.s_a = self.shifted_randn(
+            display_size, self.style_dim, 1, 1, domain="a"
+        ).cuda()
+        self.s_b = self.shifted_randn(
+            display_size, self.style_dim, 1, 1, domain="b"
+        ).cuda()
 
         # Setup the optimizers
         beta1 = hyperparameters["beta1"]
@@ -68,6 +76,17 @@ class MUNIT_Trainer(nn.Module):
         self.apply(weights_init(hyperparameters["init"]))
         self.dis_a.apply(weights_init("gaussian"))
         self.dis_b.apply(weights_init("gaussian"))
+
+        # self.style_store = {
+        #     "a": [
+        #         torch.randn(display_size, self.style_dim, 1, 1).cuda()
+        #         for _ in range(hyperparameters["style_store_size"] or 100)
+        #     ],
+        #     "b": [
+        #         torch.randn(display_size, self.style_dim, 1, 1).cuda()
+        #         for _ in range(hyperparameters["style_store_size"] or 100)
+        #     ],
+        # }
 
         # Load VGG model if needed
         if "vgg_w" in hyperparameters.keys() and hyperparameters["vgg_w"] > 0:
@@ -95,8 +114,12 @@ class MUNIT_Trainer(nn.Module):
 
     def gen_update(self, x_a, x_b, hyperparameters):
         self.gen_opt.zero_grad()
-        s_a = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).cuda())
-        s_b = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).cuda())
+        s_a = Variable(
+            self.shifted_randn(x_a.size(0), self.style_dim, 1, 1, domain="a").cuda()
+        )
+        s_b = Variable(
+            self.shifted_randn(x_b.size(0), self.style_dim, 1, 1, domain="b").cuda()
+        )
         # encode
         c_a, self.s_a_prime = self.gen_a.encode(x_a)
         c_b, self.s_b_prime = self.gen_b.encode(x_b)
@@ -127,6 +150,7 @@ class MUNIT_Trainer(nn.Module):
         )
 
         # reconstruction loss
+        # torch.mean(torch.abs(input - target))
         self.loss_gen_recon_x_a = self.recon_criterion(x_a_recon, x_a)
         self.loss_gen_recon_x_b = self.recon_criterion(x_b_recon, x_b)
         self.loss_gen_recon_s_a = self.recon_criterion(s_a_recon, s_a)
@@ -158,6 +182,7 @@ class MUNIT_Trainer(nn.Module):
             else 0
         )
         # total loss
+        # print('\n\n', hyperparameters, "\n\n")
         self.loss_gen_total = (
             hyperparameters["gan_w"] * self.loss_gen_adv_a
             + hyperparameters["gan_w"] * self.loss_gen_adv_b
@@ -186,12 +211,23 @@ class MUNIT_Trainer(nn.Module):
             (self.instancenorm(img_fea) - self.instancenorm(target_fea)) ** 2
         )
 
+    def shifted_randn(self, *sizes, domain="a"):
+        return (
+            torch.randn(*sizes) + self.randn_shift
+            if domain == "a"
+            else torch.randn(*sizes) - self.randn_shift
+        )
+
     def sample(self, x_a, x_b):
         self.eval()
         s_a1 = Variable(self.s_a)
         s_b1 = Variable(self.s_b)
-        s_a2 = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).cuda())
-        s_b2 = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).cuda())
+        s_a2 = Variable(
+            self.shifted_randn(x_a.size(0), self.style_dim, 1, 1, domain="a").cuda()
+        )
+        s_b2 = Variable(
+            self.shifted_randn(x_b.size(0), self.style_dim, 1, 1, domain="b").cuda()
+        )
         x_a_recon, x_b_recon, x_ba1, x_ba2, x_ab1, x_ab2 = [], [], [], [], [], []
         for i in range(x_a.size(0)):
             c_a, s_a_fake = self.gen_a.encode(x_a[i].unsqueeze(0))
@@ -210,8 +246,12 @@ class MUNIT_Trainer(nn.Module):
 
     def dis_update(self, x_a, x_b, hyperparameters):
         self.dis_opt.zero_grad()
-        s_a = Variable(torch.randn(x_a.size(0), self.style_dim, 1, 1).cuda())
-        s_b = Variable(torch.randn(x_b.size(0), self.style_dim, 1, 1).cuda())
+        s_a = Variable(
+            self.shifted_randn(x_a.size(0), self.style_dim, 1, 1, domain="a").cuda()
+        )
+        s_b = Variable(
+            self.shifted_randn(x_b.size(0), self.style_dim, 1, 1, domain="b").cuda()
+        )
         # encode
         c_a, _ = self.gen_a.encode(x_a)
         c_b, _ = self.gen_b.encode(x_b)
