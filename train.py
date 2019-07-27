@@ -2,7 +2,7 @@
 Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
-from comet_ml import Experiment
+from comet_ml import OfflineExperiment
 
 from utils import (
     get_all_data_loaders,
@@ -18,6 +18,7 @@ from torch.autograd import Variable
 from trainer import MUNIT_Trainer, UNIT_Trainer, DoubleMUNIT_Trainer
 import torch.backends.cudnn as cudnn
 import torch
+from pathlib import Path
 
 try:
     from itertools import izip as zip
@@ -28,6 +29,7 @@ import sys
 import tensorboardX
 import shutil
 import numpy as np
+import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -44,7 +46,9 @@ parser.add_argument(
 parser.add_argument("--seed", type=int, default=None, help="Torch and numpy seeds")
 opts, unknownargs = parser.parse_known_args()
 
-comet_exp = Experiment(project_name="munit", workspace="vict0rsch")
+comet_exp = OfflineExperiment(
+    project_name="munit", workspace="vict0rsch", offline_directory=opts.output_path
+)
 
 cudnn.benchmark = False
 if opts.seed is not None:
@@ -195,3 +199,10 @@ while True:
         iterations += 1
         if iterations >= max_iter:
             sys.exit("Finish training")
+comet_exp.end()
+subprocess.check_output(
+    "python -m comet_ml.scripts.upload {}".format(
+        str(Path(opts.output_path) / (comet_exp.id + ".zip"))
+    ),
+    shell=True,
+)
