@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --account=rpp-bengioy            # Yoshua pays for your job
+#SBATCH --time=24:00:00                   # The job will run for 3 hours
 #SBATCH --cpus-per-task=6               # Ask for 6 CPUs
 #SBATCH --gres=gpu:1                     # Ask for 1 GPU
 #SBATCH --mem=24G                        # Ask for 32 GB of RAM
