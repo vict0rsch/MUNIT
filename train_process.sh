@@ -2,7 +2,7 @@
 #SBATCH --cpus-per-task=6               # Ask for 6 CPUs
 #SBATCH --gres=gpu:1                     # Ask for 1 GPU
 #SBATCH --mem=24G                        # Ask for 32 GB of RAM
-#SBATCH -o /network/tmp1/schmidtv/munit/disen_v1_shift_single/slurm-%j.out  # Write the log in $SCRATCH
+#SBATCH -o /home/vsch/scratch/munit/outputs/disen_v1_shift_single/slurm-%j.out  # Write the log in $SCRATCH
 
 #. /network/home/schmidtv/anaconda3/etc/profile.d/conda.sh
 #conda activate munit
